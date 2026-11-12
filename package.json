@@ -1,8 +1,26 @@
 {
   "name": "139pan-tmdb-renamer",
   "version": "0.1.2",
+  "description": "基于 TMDB 元数据的中国移动云盘剧集批量重命名 Tampermonkey 用户脚本",
   "private": true,
   "type": "module",
+  "author": "baofeidyz",
+  "keywords": [
+    "139pan",
+    "china-mobile-cloud",
+    "tampermonkey",
+    "tmdb",
+    "userscript",
+    "renamer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/baofeidyz/139pan-tmdb-rename.git"
+  },
+  "homepage": "https://github.com/baofeidyz/139pan-tmdb-rename#readme",
+  "bugs": {
+    "url": "https://github.com/baofeidyz/139pan-tmdb-rename/issues"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test",
