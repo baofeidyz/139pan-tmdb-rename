@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "author": "baofeidyz",
+  "license": "MIT",
   "keywords": [
     "139pan",
     "china-mobile-cloud",

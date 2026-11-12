@@ -19,13 +19,15 @@ This project ports the proven TMDB-assisted workflow from [guangyapan-tools](htt
 
 Requirements: a modern browser, [Tampermonkey](https://www.tampermonkey.net/), a [TMDB Read Access Token](https://www.themoviedb.org/settings/api), and Node.js 20+ for building.
 
+Download `139pan-tmdb-renamer.user.js` from the [latest GitHub Release](https://github.com/baofeidyz/139pan-tmdb-rename/releases/latest) and open it with Tampermonkey, or build it from source:
+
 ```bash
 git clone https://github.com/baofeidyz/139pan-tmdb-rename.git
 cd 139pan-tmdb-rename
 npm run build
 ```
 
-Create a new Tampermonkey script and paste the complete contents of `dist/139pan-tmdb-renamer.user.js`. Then:
+If the file does not open Tampermonkey automatically, create a new script and paste the complete contents of `dist/139pan-tmdb-renamer.user.js`. Then:
 
 1. Open an `Sxx` season folder on [China Mobile Cloud](https://yun.139.com/w/).
 2. Refresh the file list so the script can observe the page's authenticated request.

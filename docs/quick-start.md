@@ -14,6 +14,10 @@ Read Access Token 通常是较长的 JWT 字符串。不要把它提交到 Git�
 
 ## 安装
 
+推荐从 [GitHub Releases](https://github.com/baofeidyz/139pan-tmdb-rename/releases/latest) 下载最新的 `139pan-tmdb-renamer.user.js`，打开文件并允许 Tampermonkey 安装。
+
+也可以从源码构建：
+
 ```bash
 git clone https://github.com/baofeidyz/139pan-tmdb-rename.git
 cd 139pan-tmdb-rename
@@ -28,7 +32,7 @@ npm run build
 4. 保存，并确认脚本已启用。
 5. 打开或刷新 `https://yun.139.com/w/`。
 
-升级时重新拉取源码、执行 `npm run build`，再用新的构建产物覆盖 Tampermonkey 中的脚本。
+升级时可从 Releases 下载新版本；源码安装则重新拉取源码、执行 `npm run build`，再用新的构建产物覆盖 Tampermonkey 中的脚本。
 
 ## 推荐目录结构
 

@@ -25,7 +25,11 @@
 
 ## 快速使用
 
-### 1. 构建并安装脚本
+### 1. 安装脚本
+
+从 [GitHub Releases](https://github.com/baofeidyz/139pan-tmdb-rename/releases/latest) 下载最新的 `139pan-tmdb-renamer.user.js`，打开文件并允许 Tampermonkey 安装。
+
+也可以从源码构建：
 
 ```bash
 git clone https://github.com/baofeidyz/139pan-tmdb-rename.git
@@ -33,7 +37,7 @@ cd 139pan-tmdb-rename
 npm run build
 ```
 
-在 Tampermonkey 中新建脚本，把 `dist/139pan-tmdb-renamer.user.js` 的完整内容粘贴进去并保存。
+若浏览器没有自动打开 Tampermonkey，请在 Tampermonkey 中新建脚本，把 `dist/139pan-tmdb-renamer.user.js` 的完整内容粘贴进去并保存。
 
 ### 2. 整理目录
 
