@@ -77,6 +77,7 @@ npm run check
 - 执行前出现浏览器确认框。
 - 成功、失败、状态过期和最终名称不一致能被区分。
 - 页面与控制台中不输出 Authorization、Cookie 或 TMDB Token。
+- TMDB Token 使用异步 `GM.*Value` API，并兼容旧式 `GM_*Value` API；写入和删除后必须回读校验，不得静默降级到页面 `localStorage`。
 
 ## 版本与构建
 

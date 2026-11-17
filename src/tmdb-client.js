@@ -1,18 +1,45 @@
 globalThis.GTR = globalThis.GTR || {};
 
 (() => {
-  const TOKEN_KEY = 'guangya_tmdb_read_token';
+  const TOKEN_KEY = '139pan_tmdb_read_token';
+  const LEGACY_TOKEN_KEY = 'guangya_tmdb_read_token';
   const SERIES_KEY_PREFIX = 'guangya_tmdb_series:';
 
-  function gmGet(key, fallback = '') {
-    return typeof GM_getValue === 'function' ? GM_getValue(key, fallback) : fallback;
+  async function gmGet(key, fallback = '') {
+    if (typeof globalThis.GM?.getValue === 'function') return globalThis.GM.getValue(key, fallback);
+    if (typeof globalThis.GM_getValue === 'function') return globalThis.GM_getValue(key, fallback);
+    throw new Error('油猴隔离存储不可用，请检查脚本管理器和 @grant 配置');
   }
-  function gmSet(key, value) {
-    if (typeof GM_setValue === 'function') return GM_setValue(key, value);
-    return undefined;
+  async function gmSet(key, value) {
+    if (typeof globalThis.GM?.setValue === 'function') return globalThis.GM.setValue(key, value);
+    if (typeof globalThis.GM_setValue === 'function') return globalThis.GM_setValue(key, value);
+    throw new Error('油猴隔离存储不可用，请检查脚本管理器和 @grant 配置');
   }
-  function getTmdbToken() { return gmGet(TOKEN_KEY, ''); }
-  function setTmdbToken(token) { return gmSet(TOKEN_KEY, String(token || '').trim()); }
+  async function gmDelete(key) {
+    if (typeof globalThis.GM?.deleteValue === 'function') return globalThis.GM.deleteValue(key);
+    if (typeof globalThis.GM_deleteValue === 'function') return globalThis.GM_deleteValue(key);
+    return gmSet(key, '');
+  }
+  async function getTmdbToken() {
+    const current = String(await gmGet(TOKEN_KEY, '') || '').trim();
+    if (current) return current;
+    const legacy = String(await gmGet(LEGACY_TOKEN_KEY, '') || '').trim();
+    if (!legacy) return '';
+    await gmSet(TOKEN_KEY, legacy);
+    await gmDelete(LEGACY_TOKEN_KEY);
+    return legacy;
+  }
+  async function setTmdbToken(token) {
+    const normalized = String(token || '').trim();
+    if (!normalized) throw new Error('TMDB Token 不能为空；如需移除，请点击“清除 Token”');
+    await gmSet(TOKEN_KEY, normalized);
+    if (String(await gmGet(TOKEN_KEY, '') || '').trim() !== normalized) throw new Error('TMDB Token 保存校验失败');
+    await gmDelete(LEGACY_TOKEN_KEY);
+  }
+  async function clearTmdbToken() {
+    await Promise.all([gmDelete(TOKEN_KEY), gmDelete(LEGACY_TOKEN_KEY)]);
+    if (await getTmdbToken()) throw new Error('TMDB Token 清除校验失败');
+  }
   function cacheSeries(folderKey, series) { return gmSet(`${SERIES_KEY_PREFIX}${folderKey}`, series); }
   function getCachedSeries(folderKey) { return gmGet(`${SERIES_KEY_PREFIX}${folderKey}`, null); }
 
@@ -34,13 +61,15 @@ globalThis.GTR = globalThis.GTR || {};
     });
   }
 
-  function createTmdbClient({ token = getTmdbToken(), request = defaultRequest, language = 'zh-CN' } = {}) {
+  function createTmdbClient({ token, request = defaultRequest, language = 'zh-CN' } = {}) {
+    let resolvedToken = token;
     async function get(path, params = {}) {
-      if (!token) throw new Error('请先配置 TMDB Read Access Token');
+      if (resolvedToken === undefined) resolvedToken = await getTmdbToken();
+      if (!resolvedToken) throw new Error('请先配置 TMDB Read Access Token');
       const url = new URL(`https://api.themoviedb.org/3${path}`);
       url.searchParams.set('language', params.language || language);
       for (const [key, value] of Object.entries(params)) if (key !== 'language' && value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
-      const response = await request({ method: 'GET', url: url.toString(), timeout: 15000, headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+      const response = await request({ method: 'GET', url: url.toString(), timeout: 15000, headers: { Accept: 'application/json', Authorization: `Bearer ${resolvedToken}` } });
       if (response.status === 401 || response.status === 403) throw new Error('TMDB 凭据无效或无权限');
       if (response.status < 200 || response.status >= 300) throw new Error(redactError(`TMDB 请求失败 (${response.status}): ${response.responseText || ''}`));
       try { return JSON.parse(response.responseText); } catch { throw new Error('TMDB 返回了无效 JSON'); }
@@ -91,6 +120,6 @@ globalThis.GTR = globalThis.GTR || {};
   }
 
   Object.assign(globalThis.GTR, {
-    TOKEN_KEY, getTmdbToken, setTmdbToken, cacheSeries, getCachedSeries, redactError, createTmdbClient
+    TOKEN_KEY, LEGACY_TOKEN_KEY, getTmdbToken, setTmdbToken, clearTmdbToken, cacheSeries, getCachedSeries, redactError, createTmdbClient
   });
 })();

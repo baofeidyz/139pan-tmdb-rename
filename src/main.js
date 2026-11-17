@@ -31,9 +31,9 @@ globalThis.GTR = globalThis.GTR || {};
     return String(value || fallback).trim();
   }
 
-  function cachedSeriesPatch(folder, currentSeries, getCachedSeries) {
+  async function cachedSeriesPatch(folder, currentSeries, getCachedSeries) {
     if (currentSeries || !folder?.displayPath || typeof getCachedSeries !== 'function') return {};
-    const cached = getCachedSeries(folder.displayPath);
+    const cached = await getCachedSeries(folder.displayPath);
     return cached ? { series: cached, candidates: [cached], progress: '已恢复该目录确认过的 TMDB 剧集，可重新扫描并预览' } : {};
   }
 
@@ -46,18 +46,18 @@ globalThis.GTR = globalThis.GTR || {};
 
   function startApplication({ document: doc = document, pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window } = {}) {
     const captures = {}; let ui; let contextKey = '';
-    let state = { folder: folderFromCapture(null, []), selectedFolderName: '', hasToken: Boolean(G.getTmdbToken()), authReady: false, query: '', candidates: [], series: null, episodes: [], files: [], plan: [], validation: null, mode: 'full', results: [], recoveryPlan: [], running: false, progress: '' };
+    let state = { folder: folderFromCapture(null, []), selectedFolderName: '', hasToken: false, authReady: false, query: '', candidates: [], series: null, episodes: [], files: [], plan: [], validation: null, mode: 'full', results: [], recoveryPlan: [], running: false, progress: '' };
     const update = (patch = {}) => { state = { ...state, ...patch }; ui?.render(state); return state; };
-    const refreshFolder = () => {
+    const refreshFolder = async () => {
       const folder = folderFromCapture(captures.list, breadcrumbNames(doc));
       const nextKey = `${folder.parentId}:${folder.displayPath}`;
       const chosen = selectedFolderName(doc, folder.seriesTitle);
       const changed = Boolean(contextKey && nextKey && nextKey !== contextKey);
-      if (changed) update({ folder, selectedFolderName: chosen, query: '', series: null, candidates: [], files: [], plan: [], validation: null, results: [], recoveryPlan: [], progress: '目录已变化，旧计划已清除', ...cachedSeriesPatch(folder, null, G.getCachedSeries) });
-      else if (state.folder.parentId !== folder.parentId || state.folder.displayPath !== folder.displayPath || state.selectedFolderName !== chosen) update({ folder, selectedFolderName: chosen, ...cachedSeriesPatch(folder, state.series, G.getCachedSeries) });
+      if (changed) update({ folder, selectedFolderName: chosen, query: '', series: null, candidates: [], files: [], plan: [], validation: null, results: [], recoveryPlan: [], progress: '目录已变化，旧计划已清除', ...await cachedSeriesPatch(folder, null, G.getCachedSeries) });
+      else if (state.folder.parentId !== folder.parentId || state.folder.displayPath !== folder.displayPath || state.selectedFolderName !== chosen) update({ folder, selectedFolderName: chosen, ...await cachedSeriesPatch(folder, state.series, G.getCachedSeries) });
       if (nextKey) contextKey = nextKey;
     };
-    const stopObserver = G.install139RequestObserver(pageWindow, (capture) => { captures[capture.kind] = capture; update({ authReady: Boolean(G.contextFromCaptures(captures)) }); if (capture.kind === 'list') queueMicrotask(refreshFolder); });
+    const stopObserver = G.install139RequestObserver(pageWindow, (capture) => { captures[capture.kind] = capture; update({ authReady: Boolean(G.contextFromCaptures(captures)) }); if (capture.kind === 'list') queueMicrotask(() => refreshFolder().catch(reportError)); });
 
     async function scan() {
       const context = G.contextFromCaptures(captures); if (!context) throw new Error('尚未捕获移动云盘授权；请刷新当前文件列表');
@@ -75,10 +75,11 @@ globalThis.GTR = globalThis.GTR || {};
     }
     const reportError = (error) => update({ running: false, progress: error?.message || String(error) });
     const handlers = {
-      open: () => { refreshFolder(); update({ hasToken: Boolean(G.getTmdbToken()), authReady: Boolean(G.contextFromCaptures(captures)) }); },
-      'save-token': (panel) => { G.setTmdbToken(panel.querySelector('#gtr-token').value); update({ hasToken: Boolean(G.getTmdbToken()), progress: 'TMDB Token 已保存到油猴隔离存储' }); },
+      open: async () => { try { await refreshFolder(); update({ hasToken: Boolean(await G.getTmdbToken()), authReady: Boolean(G.contextFromCaptures(captures)) }); } catch (error) { reportError(error); } },
+      'save-token': async (panel) => { try { await G.setTmdbToken(panel.querySelector('#gtr-token').value); update({ hasToken: true, progress: 'TMDB Token 已保存并通过油猴隔离存储回读校验' }); } catch (error) { reportError(error); } },
+      'clear-token': async () => { try { await G.clearTmdbToken(); update({ hasToken: false, progress: 'TMDB Token 已从油猴隔离存储中清除' }); } catch (error) { reportError(error); } },
       search: async (panel) => { try { const query = selectedFolderName(doc, state.folder.seriesTitle) || panel.querySelector('#gtr-query').value.trim(); update({ query, progress: `正在搜索“${query}”…` }); const candidates = await G.createTmdbClient().searchTv(query); update({ candidates, progress: candidates.length ? '请选择准确的 TMDB 剧集' : 'TMDB 未找到匹配剧集' }); } catch (error) { reportError(error); } },
-      'choose-series': async (panel) => { try { const id = Number(panel.querySelector('input[name="gtr-series"]:checked')?.value); const series = state.candidates.find((item) => item.id === id); if (!series) throw new Error('请明确选择一个候选剧集'); G.cacheSeries(state.folder.displayPath, series); update({ series, progress: '正在读取目录和 TMDB 季信息…' }); await loadPlan(series); } catch (error) { reportError(error); } },
+      'choose-series': async (panel) => { try { const id = Number(panel.querySelector('input[name="gtr-series"]:checked')?.value); const series = state.candidates.find((item) => item.id === id); if (!series) throw new Error('请明确选择一个候选剧集'); await G.cacheSeries(state.folder.displayPath, series); update({ series, progress: '正在读取目录和 TMDB 季信息…' }); await loadPlan(series); } catch (error) { reportError(error); } },
       reload: async () => { try { update({ running: true, progress: '正在重新扫描移动云盘目录和 TMDB 季信息…' }); await loadPlan(); } catch (error) { reportError(error); } },
       'select-all': () => { const plan = setPlanSelection(state.plan, true); update({ plan, validation: G.validatePlan(plan, state.files) }); },
       'select-none': () => { const plan = setPlanSelection(state.plan, false); update({ plan, validation: G.validatePlan(plan, state.files) }); },
@@ -87,10 +88,10 @@ globalThis.GTR = globalThis.GTR || {};
       recover: async () => { try { if (!confirm(`恢复 ${state.recoveryPlan.length} 个文件的原名称？`)) return; const outcome = await G.executeRenamePlan({ plan: state.recoveryPlan, listFiles: state.client.listFiles, renameFile: state.client.renameFile }); update({ results: outcome.results, recoveryPlan: [], progress: '恢复操作完成并已校验' }); } catch (error) { reportError(error); } },
       change: (event) => { if (event.target.id === 'gtr-mode') { const mode = event.target.value; const plan = state.plan.map((item) => ({ ...item, mode, targetName: item.episode ? G.generateTargetName(item.seriesTitle, item.episode, item.parsed.extension, mode, item.variantTags) : '' })); update({ mode, plan, validation: G.validatePlan(plan, state.files) }); } const row = event.target.closest?.('tr[data-index]'); if (row && event.target.classList.contains('gtr-select')) { const plan = [...state.plan]; const index = Number(row.dataset.index); plan[index] = { ...plan[index], selected: event.target.checked }; update({ plan, validation: G.validatePlan(plan, state.files) }); } }
     };
-    const mount = () => { if (!doc.body || doc.getElementById('gtr-launcher')) return; ui = G.createUi(doc, handlers, state); refreshFolder(); };
+    const mount = () => { if (!doc.body || doc.getElementById('gtr-launcher')) return; ui = G.createUi(doc, handlers, state); Promise.all([refreshFolder(), G.getTmdbToken()]).then(([, token]) => update({ hasToken: Boolean(token) })).catch(reportError); };
     if (doc.body) mount(); else doc.addEventListener('DOMContentLoaded', mount, { once: true });
     let refreshQueued = false;
-    const mutation = new MutationObserver(() => { if (refreshQueued) return; refreshQueued = true; queueMicrotask(() => { refreshQueued = false; refreshFolder(); }); });
+    const mutation = new MutationObserver(() => { if (refreshQueued) return; refreshQueued = true; queueMicrotask(() => { refreshQueued = false; refreshFolder().catch(reportError); }); });
     if (doc.documentElement) mutation.observe(doc.documentElement, { childList: true, subtree: true });
     return { getState: () => state, handlers, stop: () => { stopObserver(); mutation.disconnect(); } };
   }

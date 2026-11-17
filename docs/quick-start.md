@@ -61,7 +61,7 @@ npm run build
 
 ### 2. 配置 TMDB
 
-打开“TMDB 重命名”面板，粘贴 TMDB Read Access Token，点击“保存 Token”。Token 会保存在 Tampermonkey 的隔离存储中，而不是移动云盘页面的本地存储。
+打开“TMDB 重命名”面板，粘贴 TMDB Read Access Token，点击“保存 Token”。脚本会在写入后立即回读校验；只有校验成功才会显示已配置。Token 保存在 Tampermonkey 的隔离存储中，不会写入移动云盘页面的 `localStorage`。如需移除，点击旁边的“清除 Token”，脚本同样会在删除后进行回读校验。
 
 ### 3. 确认剧集
 

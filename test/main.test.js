@@ -20,12 +20,12 @@ test('uses fallback when no selected row is available', () => {
   assert.equal(selectedFolderName({ querySelector: () => null }, '低智商犯罪'), '低智商犯罪');
 });
 
-test('restores a cached series only for a recognized folder without a current selection', () => {
+test('restores a cached series only for a recognized folder without a current selection', async () => {
   const cached = { id: 272432, name: '低智商犯罪' };
-  assert.deepEqual(cachedSeriesPatch({ displayPath: '低智商犯罪/S01' }, null, (key) => key === '低智商犯罪/S01' ? cached : null), {
+  assert.deepEqual(await cachedSeriesPatch({ displayPath: '低智商犯罪/S01' }, null, (key) => key === '低智商犯罪/S01' ? cached : null), {
     series: cached, candidates: [cached], progress: '已恢复该目录确认过的 TMDB 剧集，可重新扫描并预览'
   });
-  assert.deepEqual(cachedSeriesPatch({ displayPath: '低智商犯罪/S01' }, cached, () => cached), {});
+  assert.deepEqual(await cachedSeriesPatch({ displayPath: '低智商犯罪/S01' }, cached, () => cached), {});
 });
 
 test('bulk selection includes only matched files whose target name changes', () => {

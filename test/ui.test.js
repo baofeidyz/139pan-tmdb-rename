@@ -16,6 +16,9 @@ test('renders missing credential and authorization readiness', () => {
   assert.match(html, /等待页面请求/); assert.match(html, /TMDB：未配置/);
   assert.match(html, /https:\/\/www\.themoviedb\.org\/settings\/api/);
   assert.match(html, /不可点击：请先填写并保存 TMDB Token/);
+  assert.match(html, /不写入移动云盘页面的 localStorage/);
+  assert.match(html, /清除 Token/);
+  assert.match(html, /当前没有已保存的 Token/);
 });
 
 test('renders explicit candidate confirmation and metadata', () => {
@@ -34,7 +37,7 @@ test('renders low-confidence unchecked row, manual control, conflicts and result
 test('renders ordered action buttons with distinct style hooks', () => {
   const item = { fileId: '1', oldName: 'a.mp4', targetName: '节目.S03E01.mp4', selected: true, episode: { id: 1, seasonNumber: 3, episodeNumber: 1, name: '第一期' }, confidence: 'high', evidence: [], warnings: [] };
   const html = renderPanelMarkup({ ...base, hasToken: true, authReady: true, selectedFolderName: '节目', candidates: [{ id: 7, name: '节目', originCountry: [], tmdbUrl: '#' }], selectedSeriesId: 7, series: { id: 7 }, plan: [item], episodes: [item.episode], validation: { errors: [] }, recoveryPlan: [item] });
-  for (const style of ['save', 'search', 'choose', 'reload', 'select', 'select-clear', 'execute', 'recover']) assert.match(html, new RegExp(`gtr-btn-${style}`));
+  for (const style of ['save', 'clear-token', 'search', 'choose', 'reload', 'select', 'select-clear', 'execute', 'recover']) assert.match(html, new RegExp(`gtr-btn-${style}`));
   for (const step of ['1　保存', '2　按', '3　确认', '4　重新', '5　确认', '6　恢复']) assert.match(html, new RegExp(step));
   assert.match(html, /全选可重命名项（1）/); assert.match(html, /取消全选/);
 });
