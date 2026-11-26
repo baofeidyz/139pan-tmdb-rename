@@ -112,7 +112,22 @@ globalThis.GTR = globalThis.GTR || {};
     const launcher = document.createElement('button'); launcher.id = 'gtr-launcher'; launcher.textContent = 'TMDB 重命名'; launcher.title = '打开 TMDB 文件重命名向导';
     const panel = document.createElement('div'); panel.id = 'gtr-panel'; panel.hidden = true;
     let state = initialState;
-    const render = (next = state) => { state = next; panel.innerHTML = renderPanelMarkup(state); };
+    const render = (next = state) => {
+      const table = panel.querySelector?.('.gtr-table-wrap');
+      const panelScrollTop = panel.scrollTop;
+      const panelScrollLeft = panel.scrollLeft;
+      const tableScrollTop = table?.scrollTop;
+      const tableScrollLeft = table?.scrollLeft;
+      state = next;
+      panel.innerHTML = renderPanelMarkup(state);
+      panel.scrollTop = panelScrollTop;
+      panel.scrollLeft = panelScrollLeft;
+      const nextTable = panel.querySelector?.('.gtr-table-wrap');
+      if (nextTable && table) {
+        nextTable.scrollTop = tableScrollTop;
+        nextTable.scrollLeft = tableScrollLeft;
+      }
+    };
     const openEpisodeList = (input) => {
       const list = input.closest('.gtr-episode-combobox')?.querySelector('.gtr-episode-list');
       if (!list) return;

@@ -55,6 +55,32 @@ test('shows immediate scan feedback while reload is running', () => {
   assert.match(html, /4　正在扫描…/); assert.match(html, /不可点击：正在扫描或执行任务/);
 });
 
+test('keeps panel and preview table scroll positions after selection rerenders', () => {
+  const panel = {
+    scrollTop: 0, scrollLeft: 0, hidden: true,
+    addEventListener() {},
+    querySelector(selector) { return selector === '.gtr-table-wrap' ? this.table : null; },
+    set innerHTML(markup) {
+      this.markup = markup;
+      this.table = markup.includes('gtr-table-wrap') ? { scrollTop: 0, scrollLeft: 0 } : null;
+      this.scrollTop = 0;
+      this.scrollLeft = 0;
+    }
+  };
+  const documentLike = {
+    createElement: (tag) => tag === 'div' ? panel : { addEventListener() {} },
+    getElementById: () => null,
+    body: { append() {} }, head: { appendChild() {} }
+  };
+  const item = { oldName: 'a.mp4', targetName: '节目.S03E01.mp4', selected: false, episode: { seasonNumber: 3, episodeNumber: 1 }, confidence: 'high', evidence: [], warnings: [] };
+  const ui = createUi(documentLike, {}, { ...base, plan: [item] });
+  panel.scrollTop = 120; panel.scrollLeft = 15;
+  panel.table.scrollTop = 640; panel.table.scrollLeft = 85;
+  ui.render({ ...base, plan: [{ ...item, selected: true }] });
+  assert.match(panel.markup, /已选 1 项/);
+  assert.deepEqual([panel.scrollTop, panel.scrollLeft, panel.table.scrollTop, panel.table.scrollLeft], [120, 15, 640, 85]);
+});
+
 test('combines 139pan capture with breadcrumb season and escapes markup', () => {
   const folder = folderFromCapture({ body: { parentFileId: '456' } }, ['脱口秀和Ta的朋友们', 'S03']);
   assert.equal(folder.parentId, '456'); assert.equal(folder.seriesTitle, '脱口秀和Ta的朋友们'); assert.equal(folder.seasonNumber, 3);
