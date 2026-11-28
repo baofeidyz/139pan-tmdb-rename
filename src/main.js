@@ -44,6 +44,13 @@ globalThis.GTR = globalThis.GTR || {};
     }));
   }
 
+  function resolveSeriesTitle(series, folder) {
+    const title = [series?.name, series?.originalName, folder?.seriesTitle]
+      .map((value) => String(value || '').trim()).find(Boolean);
+    if (!title) throw new Error('未能确定剧名，请确认 TMDB 剧集和上一级目录名称');
+    return title;
+  }
+
   function startApplication({ document: doc = document, pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window } = {}) {
     const captures = {}; let ui; let contextKey = '';
     let state = { folder: folderFromCapture(null, []), selectedFolderName: '', hasToken: false, authReady: false, query: '', candidates: [], series: null, episodes: [], files: [], plan: [], validation: null, mode: 'full', results: [], recoveryPlan: [], running: false, progress: '' };
@@ -70,7 +77,7 @@ globalThis.GTR = globalThis.GTR || {};
       if (!series) throw new Error('请先明确选择一个 TMDB 剧集');
       const { client, files, folder } = await scan(); if (!Number.isInteger(folder.seasonNumber)) throw new Error('当前目录名未包含 Sxx 季号');
       const seasons = await G.createTmdbClient().loadSeasons(series.id, folder.seasonNumber); const episodes = [...seasons.regular, ...seasons.specials];
-      const plan = G.createRenamePlan(files, G.matchDirectory(files, seasons.regular, seasons.specials), { seriesTitle: series.name, mode: state.mode });
+      const plan = G.createRenamePlan(files, G.matchDirectory(files, seasons.regular, seasons.specials), { seriesTitle: resolveSeriesTitle(series, folder), mode: state.mode });
       update({ client, files, folder, episodes, plan, validation: G.validatePlan(plan, files), results: [], recoveryPlan: [], running: false, progress: `已载入 ${files.length} 个文件` });
     }
     const reportError = (error) => update({ running: false, progress: error?.message || String(error) });
@@ -96,6 +103,6 @@ globalThis.GTR = globalThis.GTR || {};
     return { getState: () => state, handlers, stop: () => { stopObserver(); mutation.disconnect(); } };
   }
 
-  Object.assign(G, { breadcrumbNames, folderFromCapture, selectedFolderName, cachedSeriesPatch, setPlanSelection, startApplication });
+  Object.assign(G, { breadcrumbNames, folderFromCapture, selectedFolderName, cachedSeriesPatch, setPlanSelection, resolveSeriesTitle, startApplication });
   if (typeof document !== 'undefined' && !globalThis.__GTR_TEST__) startApplication();
 })();

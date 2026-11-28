@@ -4,7 +4,14 @@ globalThis.__GTR_TEST__ = true;
 globalThis.MutationObserver = class { observe() {} disconnect() {} };
 import '../src/main.js';
 
-const { breadcrumbNames, folderFromCapture, selectedFolderName, cachedSeriesPatch, setPlanSelection } = globalThis.GTR;
+const { breadcrumbNames, folderFromCapture, selectedFolderName, cachedSeriesPatch, setPlanSelection, resolveSeriesTitle } = globalThis.GTR;
+
+test('uses a nonempty series title for generated filenames', () => {
+  assert.equal(resolveSeriesTitle({ name: '节目' }, { seriesTitle: '目录名' }), '节目');
+  assert.equal(resolveSeriesTitle({ name: '' }, { seriesTitle: '目录名' }), '目录名');
+  assert.equal(resolveSeriesTitle({ name: '', originalName: 'Original' }, {}), 'Original');
+  assert.throws(() => resolveSeriesTitle({ name: '' }, {}), /未能确定剧名/);
+});
 
 test('reads the current 139pan breadcrumb leaf nodes', () => {
   const nodes = ['全部', '...', '低智商犯罪', 'S01'].map((textContent) => ({ textContent }));

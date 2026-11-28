@@ -40,6 +40,13 @@ test('skips existing standard names by default', () => {
   assert.equal(plan[0].selected, false);
 });
 
+test('selects an existing episode code when its series prefix is missing', () => {
+  const files = [{ id: '1', name: 'S03E01.朋友初见面.mp4' }];
+  const plan = createRenamePlan(files, [{ episode: ep, confidence: 'high', evidence: [], warnings: [] }], { seriesTitle: '脱口秀和Ta的朋友们' });
+  assert.equal(plan[0].selected, true);
+  assert.equal(plan[0].targetName, '脱口秀和Ta的朋友们.S03E01.朋友初见面.mp4');
+});
+
 test('upgrades an existing standard name when media specification can be added', () => {
   const files = [{ id: '1', name: 'Show.S03E01.4K.HEVC.mp4' }];
   const plan = createRenamePlan(files, [{ episode: ep, confidence: 'high', evidence: [], warnings: [] }], { seriesTitle: 'Show', mode: 'compact' });

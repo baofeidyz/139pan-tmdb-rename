@@ -77,6 +77,9 @@ globalThis.GTR = globalThis.GTR || {};
       const parsed = file.parsed || globalThis.GTR.parseFilename(file.name);
       const match = matches[index] || { episode: null, confidence: 'unmatched', evidence: [], warnings: ['未匹配'] };
       const existingStandard = Boolean(parsed.explicitEpisode);
+      const missingSeriesPrefix = existingStandard && /^S\d{1,3}E\d{1,3}(?:$|[.\s_-])/i.test(parsed.stem);
+      const sameExplicitEpisode = existingStandard && match.episode &&
+        parsed.explicitEpisode.season === match.episode.seasonNumber && parsed.explicitEpisode.episode === match.episode.episodeNumber;
       const variantTags = extractVariantTags({ ...file, parsed });
       const targetName = match.episode ? generateTargetName(seriesTitle, match.episode, parsed.extension, mode, variantTags) : '';
       const evidence = [...(match.evidence || [])];
@@ -85,7 +88,7 @@ globalThis.GTR = globalThis.GTR || {};
         fileId: String(file.id), parentId: String(file.parentId || ''), oldName: file.name,
         targetName, episode: match.episode, confidence: match.confidence,
         evidence, warnings: [...(match.warnings || [])],
-        selected: match.confidence === 'high' && targetName !== file.name && (!existingStandard || variantTags.length > 0 || rematchStandard),
+        selected: match.confidence === 'high' && targetName !== file.name && (!existingStandard || variantTags.length > 0 || rematchStandard || (missingSeriesPrefix && sameExplicitEpisode)),
         manuallyConfirmed: false, existingStandard, parsed, mode, seriesTitle,
         variantTags, variantKey: variantTags.join('.').toLowerCase()
       };

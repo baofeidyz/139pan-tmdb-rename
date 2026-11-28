@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         中国移动云盘 TMDB 重命名助手
 // @namespace    https://github.com/baofeidyz/139pan-tmdb-rename
-// @version      0.1.4
+// @version      0.1.5
 // @description  根据 TMDB 剧集数据预览并安全重命名中国移动云盘中的剧集文件
 // @author       baofeidyz
 // @license      MIT
